@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      actions: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get tag information
+      id: tag_info
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+        echo "commit_sha=$GITHUB_SHA" >> $GITHUB_OUTPUT
+        echo "Tag: $TAG_NAME"
+        echo "Commit: $GITHUB_SHA"
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag_info.outputs.tag_name }}
+        release_name: Release ${{ steps.tag_info.outputs.tag_name }}
+        draft: false
+        prerelease: false
+
+    - name: Setup build environment
+      run: |
+        echo "Setting up macOS build environment..."
+        # TODO: Installer/configurer 4DBuilder
+        # TODO: Installer/configurer tool4D
+        # TODO: Installer/configurer packageManager
+        # TODO: Vérifier la disponibilité des VCS des composants requis
+        
+        # Placeholder pour la configuration
+        echo "Build environment setup completed"
+
+    - name: Resolve dependencies
+      run: |
+        echo "Resolving dependencies..."
+        # TODO: Utiliser packageManager pour résoudre les dépendances
+        # TODO: Ou récupérer directement par VCS si nécessaire
+        
+        # Exemple de commande (à adapter selon votre setup)
+        # packageManager install
+        # ou
+        # git clone <dependency-repo>
+        
+        echo "Dependencies resolved"
+
+    - name: Build component with 4DBuilder
+      run: |
+        echo "Building component..."
+        # TODO: Exécuter 4DBuilder sur l'agent macOS
+        # TODO: Compiler le composant
+        # TODO: Vérifier la réussite du build
+        
+        # Exemple de commande (à adapter selon votre setup)
+        # 4DBuilder --project <project-file> --build
+        
+        echo "Component built successfully"
+
+    - name: Archive and sign component
+      id: archive_component
+      run: |
+        echo "Archiving component..."
+        # TODO: Zipper le composant
+        # TODO: Signer numériquement l'archive
+        
+        # Get repository name from GITHUB_REPOSITORY (owner/repo)
+        REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
+        ARCHIVE_NAME="${REPO_NAME}-${{ steps.tag_info.outputs.tag_name }}.zip"
+        
+        # Exemple de commandes (à adapter)
+        # zip -r $ARCHIVE_NAME <component-folder>
+        # codesign --sign "Developer ID" $ARCHIVE_NAME
+
+        zip -r $ARCHIVE_NAME .
+        
+        echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+        echo "Component archived and signed as: $ARCHIVE_NAME"
+
+    - name: Upload release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ steps.archive_component.outputs.archive_name }}
+        asset_name: ${{ steps.archive_component.outputs.archive_name }}
+        asset_content_type: application/zip
