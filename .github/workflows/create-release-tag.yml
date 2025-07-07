@@ -8,6 +8,11 @@ on:
         required: false
         default: ''
         type: string
+      main_tag_prefix:
+        description: 'Tag prefix to use for main branch (default: 21)'
+        required: false
+        default: '21'
+        type: string
 
 jobs:
   create-tag:
@@ -42,27 +47,36 @@ jobs:
         
         echo "Current branch: $BRANCH_NAME"
         
+        # Special case for main branch - use a defined tag prefix instead of branch name
+        if [ "$BRANCH_NAME" = "main" ]; then
+          TAG_PREFIX="${{ inputs.main_tag_prefix }}"
+          echo "Using special tag prefix for main branch: $TAG_PREFIX"
+        else
+          TAG_PREFIX="$BRANCH_NAME"
+          echo "Using branch name as tag prefix: $TAG_PREFIX"
+        fi
+        
         # Get current commit
         CURRENT_COMMIT=$(git rev-parse HEAD)
         echo "Current commit: $CURRENT_COMMIT"
         
-        # Check if there's already a tag with format BRANCH_NAME.* on the current commit
-        EXISTING_BRANCH_TAG=$(git tag --points-at $CURRENT_COMMIT | grep "^${BRANCH_NAME}\." | head -1)
+        # Check if there's already a tag with format TAG_PREFIX.* on the current commit
+        EXISTING_BRANCH_TAG=$(git tag --points-at $CURRENT_COMMIT | grep "^${TAG_PREFIX}\." | head -1)
         
         if [ -n "$EXISTING_BRANCH_TAG" ]; then
           echo "Existing tag found on current commit: $EXISTING_BRANCH_TAG"
           TAG_TO_USE=$EXISTING_BRANCH_TAG
           echo "No new tag needed, using existing tag: $TAG_TO_USE"
         else
-          echo "No tag with format ${BRANCH_NAME}.* found on current commit, creating new tag"
+          echo "No tag with format ${TAG_PREFIX}.* found on current commit, creating new tag"
           
-          # List existing tags for this branch (format: BRANCH_NAME.*)
-          EXISTING_TAGS=$(git tag -l "${BRANCH_NAME}.*" | sort -V)
+          # List existing tags for this prefix (format: TAG_PREFIX.*)
+          EXISTING_TAGS=$(git tag -l "${TAG_PREFIX}.*" | sort -V)
           
           if [ -z "$EXISTING_TAGS" ]; then
-            # First tag for this branch
-            NEW_TAG="${BRANCH_NAME}.1"
-            echo "First tag for branch: $NEW_TAG"
+            # First tag for this prefix
+            NEW_TAG="${TAG_PREFIX}.1"
+            echo "First tag for prefix: $NEW_TAG"
           else
             # Find the highest tag and increment
             HIGHEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
@@ -71,7 +85,7 @@ jobs:
             # Extract the number and increment
             LAST_NUMBER=$(echo $HIGHEST_TAG | cut -d'.' -f2)
             NEW_NUMBER=$((LAST_NUMBER + 1))
-            NEW_TAG="${BRANCH_NAME}.${NEW_NUMBER}"
+            NEW_TAG="${TAG_PREFIX}.${NEW_NUMBER}"
             echo "New tag calculated: $NEW_TAG"
           fi
           
@@ -97,6 +111,7 @@ jobs:
         # Create a summary
         echo "## Release Tag Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch**: $BRANCH_NAME" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag Prefix**: $TAG_PREFIX" >> $GITHUB_STEP_SUMMARY
         echo "- **Commit**: $CURRENT_COMMIT" >> $GITHUB_STEP_SUMMARY
         echo "- **Tag**: $TAG_TO_USE" >> $GITHUB_STEP_SUMMARY
         
