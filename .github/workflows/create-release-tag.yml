@@ -23,7 +23,7 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history and tags
         ref: ${{ inputs.branch || github.ref }}
-        token: ${{ secrets.PATH_TOKEN }}
+        token: ${{ secrets.PAT_TOKEN }}
     
     - name: Setup Git
       run: |
@@ -107,7 +107,7 @@ jobs:
         fi
       
       env:
-        GITHUB_TOKEN: ${{ secrets.PATH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     
     outputs:
       tag: ${{ steps.create-tag.outputs.tag }}
