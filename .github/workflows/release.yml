@@ -72,7 +72,7 @@ jobs:
         
         # Get repository name from GITHUB_REPOSITORY (owner/repo)
         REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
-        ARCHIVE_NAME="${REPO_NAME}-${{ steps.tag_info.outputs.tag_name }}.zip"
+        ARCHIVE_NAME="${REPO_NAME}.zip"
         
         # Exemple de commandes (à adapter)
         # zip -r $ARCHIVE_NAME <component-folder>
