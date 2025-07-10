@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       main_tag_prefix:
-        description: 'Tag prefix to use for main branch (default: 21)'
+        description: 'Tag prefix to use instead of branch'
         required: false
-        default: '21'
+        default: ''
         type: string
 
 jobs:
